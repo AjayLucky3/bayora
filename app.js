@@ -1,7 +1,7 @@
 /**
- * PROJECT PHALANX — Core Engine & Cryptographic Audit Ledger
- * Competition: Hack in Hills '26 (Track 04: Securing Adversarial AI Safety Testing Infrastructure, Bayora)
- * Builder: Ajay Doma (Solo Builder, Team DOOM)
+ * BAYORA — Core Systems Engine & Cryptographic Audit Ledger
+ * Independent Open-Source Security & Systems Infrastructure Project
+ * Maintainer: Ajay Doma (domaajay187@gmail.com | https://github.com/AjayLucky3)
  * 
  * Strict Zero-Dependency Implementation:
  * - 100% Native Web Crypto API (window.crypto.subtle) for real SHA-256 computations
@@ -10,6 +10,8 @@
  * - Commit-reveal pre-commitment scheme with CSPRNG salt & replay attack filter
  * - Honeypot canary tripwire containment state machine
  * - Docker Compose 3-tier network bridge isolation emulator
+ * - Accessible keyboard navigation & native clipboard digest copying
+ * - Terminal stream controls (clear stdout, export bayora_audit_trace.log)
  */
 
 (function () {
@@ -211,8 +213,29 @@
   }
 
   // =========================================================================
-  // 5. LEDGER RENDERING & EXPANDABLE HASHES
+  // 5. LEDGER RENDERING, EXPANDABLE HASHES & CLIPBOARD COPY (P2)
   // =========================================================================
+
+  function handleHashCellInteraction(cell) {
+    const full = cell.getAttribute('data-full');
+    const current = cell.textContent.trim();
+    const truncated = truncateHash(full);
+
+    // Native clipboard copy
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(full).catch(() => {});
+    }
+
+    // Visual feedback: brief inline [COPIED] state
+    cell.classList.add('copied');
+    cell.textContent = '[COPIED]';
+
+    setTimeout(() => {
+      cell.classList.remove('copied');
+      // If user had expanded full, restore full; otherwise restore truncated
+      cell.textContent = (current === truncated) ? full : truncated;
+    }, 1100);
+  }
 
   async function updateLedgerDisplay() {
     const tableBody = document.getElementById('ledger-table-body');
@@ -240,23 +263,23 @@
         <td class="mono"><strong>#${entry.index.toString().padStart(3, '0')}</strong></td>
         <td class="mono">${entry.timestamp}</td>
         <td>
-          <span class="mono hash-cell" data-full="${entry.payloadHash}" title="Click to toggle full hash">
+          <span class="mono hash-cell" tabindex="0" role="button" data-full="${entry.payloadHash}" title="Click or press Enter to copy/expand full hash" aria-label="Payload Hash digest">
             ${truncateHash(entry.payloadHash)}
           </span>
         </td>
         <td>
-          <span class="mono hash-cell" data-full="${entry.responseHash}" title="Click to toggle full hash">
+          <span class="mono hash-cell" tabindex="0" role="button" data-full="${entry.responseHash}" title="Click or press Enter to copy/expand full hash" aria-label="Response Hash digest">
             ${truncateHash(entry.responseHash)}
           </span>
         </td>
         <td class="mono" style="font-weight:700;">${entry.score}/100</td>
         <td>
-          <span class="mono hash-cell" data-full="${entry.prevHash}" title="Click to toggle full hash">
+          <span class="mono hash-cell" tabindex="0" role="button" data-full="${entry.prevHash}" title="Click or press Enter to copy/expand full hash" aria-label="Previous Hash digest">
             ${truncateHash(entry.prevHash)}
           </span>
         </td>
         <td>
-          <span class="mono hash-cell" data-full="${entry.entryHash}" title="Click to toggle full hash">
+          <span class="mono hash-cell" tabindex="0" role="button" data-full="${entry.entryHash}" title="Click or press Enter to copy/expand full hash" aria-label="Entry Hash digest">
             ${truncateHash(entry.entryHash)}
           </span>
         </td>
@@ -268,16 +291,16 @@
       tableBody.appendChild(row);
     });
 
-    // Wire click-to-expand on all hash cells
+    // Wire click and keyboard accessibility on all hash cells
     tableBody.querySelectorAll('.hash-cell').forEach(cell => {
       cell.addEventListener('click', function () {
-        const full = this.getAttribute('data-full');
-        const current = this.textContent.trim();
-        const truncated = truncateHash(full);
-        if (current === truncated) {
-          this.textContent = full;
-        } else {
-          this.textContent = truncated;
+        handleHashCellInteraction(this);
+      });
+
+      cell.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleHashCellInteraction(this);
         }
       });
     });
@@ -309,7 +332,7 @@
 
     const commitDigest = await sha256(promptText + currentSalt);
     currentCommitHash = commitDigest;
-    displayCommitHashEl.textContent = `SHA-256(P+S) = 0x${commitDigest}`;
+    displayCommitHashEl.textContent = `SHA-256(Prompt + Salt) = 0x${commitDigest}`;
 
     const isReplay = consumedSalts.has(currentSalt);
     if (displayReplayStatusEl) {
@@ -342,7 +365,6 @@
   const btnTestReplay = document.getElementById('btn-test-replay');
   if (btnTestReplay) {
     btnTestReplay.addEventListener('click', () => {
-      // Pick a known consumed salt from ledger
       if (consumedSalts.size > 0) {
         const consumedArr = Array.from(consumedSalts);
         currentSalt = consumedArr[consumedArr.length - 1];
@@ -618,7 +640,7 @@
   }
 
   // =========================================================================
-  // 9. CRYPTOGRAPHIC LEDGER CHAIN VERIFICATION & TAMPER SIMULATION
+  // 9. CRYPTOGRAPHIC LEDGER CHAIN VERIFICATION & BYTE-LEVEL DIFF (P4)
   // =========================================================================
 
   const btnVerifyChain = document.getElementById('btn-verify-chain');
@@ -674,10 +696,17 @@
         chainVerifyAlertEl.classList.add('alert-fail');
         chainVerifyAlertEl.classList.remove('alert-pass');
         chainVerifyAlertEl.innerHTML = `
-          <strong>[FAIL: TAMPERING DETECTED]</strong> Hash verification failed at <strong>Block #${brokenIndex}</strong>!<br>
-          Stored Hash: <span class="mono">${mismatchDetails.stored}</span><br>
-          Computed Hash: <span class="mono">${mismatchDetails.calculated}</span><br>
-          <em>Cryptographic chain broken. Subsequent Merkle proofs invalidated.</em>
+          <strong>[FAIL: CRYPTOGRAPHIC TAMPERING DETECTED]</strong><br>
+          <span>Cryptographic hash verification failed at <strong>Block Index #${brokenIndex}</strong>.</span>
+          <div class="diff-box mono">
+<span class="diff-label">Stored Block Hash:   </span><span class="diff-val">[${mismatchDetails.stored}]</span>
+<span class="diff-label">Recomputed Hash:     </span><span class="diff-val">[${mismatchDetails.calculated}]</span>
+<span class="diff-label">Mismatch Flagged At: </span><strong>Block Index #${brokenIndex} (Tampering Detected)</strong>
+<span class="diff-label">Chained Prev Hash:   </span>[${mismatchDetails.storedPrev}]
+<span class="diff-label">Expected Prev Hash:  </span>[${mismatchDetails.actualPrev}]
+<span class="diff-label">Chain Link Status:   </span>BROKEN (H_${brokenIndex - 1} -&gt; H_${brokenIndex} mismatch)
+<span class="diff-label">Merkle Proof State:  </span>INVALIDATED (Leaf mutation prevents root convergence)
+          </div>
         `;
         logTerminal(`[VERIFY FAIL] Cryptographic chain broken at Block #${brokenIndex}!`, 'red');
         logTerminal(`[VERIFY FAIL] Stored: ${mismatchDetails.stored.substring(0, 16)}... != Computed: ${mismatchDetails.calculated.substring(0, 16)}...`, 'red');
@@ -883,14 +912,48 @@
   }
 
   // =========================================================================
-  // 12. INITIALIZATION
+  // 12. TERMINAL LOG CONTROLS (P3)
+  // =========================================================================
+
+  const btnClearTerm = document.getElementById('btn-clear-term');
+  const btnExportLog = document.getElementById('btn-export-log');
+
+  if (btnClearTerm) {
+    btnClearTerm.addEventListener('click', () => {
+      if (terminalLogEl) {
+        terminalLogEl.innerHTML = '';
+        logTerminal('Stdout buffer reset to clean state.', 'dim');
+        logTerminal('Bayora Core Kernel Sandbox Engine active.', 'green');
+      }
+    });
+  }
+
+  if (btnExportLog) {
+    btnExportLog.addEventListener('click', () => {
+      if (!terminalLogEl) return;
+      const text = terminalLogEl.innerText || terminalLogEl.textContent;
+      const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'bayora_audit_trace.log';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      logTerminal('Exported execution log buffer to bayora_audit_trace.log', 'dim');
+    });
+  }
+
+  // =========================================================================
+  // 13. INITIALIZATION
   // =========================================================================
 
   window.addEventListener('DOMContentLoaded', async () => {
     // Populate commit tag dynamically if git-commit-tag exists
     const commitTagEl = document.getElementById('git-commit-tag');
     if (commitTagEl) {
-      commitTagEl.textContent = '9440092';
+      commitTagEl.textContent = '721348e';
     }
 
     // Set initial preset prompt

@@ -1,14 +1,14 @@
-# PROJECT PHALANX
+# BAYORA
 ### Hardware-Isolated Sandboxing & Zero-Trust Mediation for Adversarial AI Evaluation
-**Competition:** Hack in Hills '26 — Track 04: Securing Adversarial AI Safety Testing Infrastructure (Bayora)  
-**Builder:** Ajay Doma (Solo Builder, Team DOOM)  
+**Project Type:** Independent Open-Source Security & Systems Infrastructure Project  
+**Author & Maintainer:** Ajay Doma  
 **Contact:** domaajay187@gmail.com | **GitHub:** [https://github.com/AjayLucky3](https://github.com/AjayLucky3)  
 **Deployment:** Zero-dependency static architecture (GitHub Pages ready, 100% offline-capable)
 
 ---
 
 > **CRITICAL HONESTY DISCLAIMER:**  
-> This web interface is an **interactive architecture simulation and cryptographic verification environment**. The actual production isolation implementation specified in this document runs on **gVisor (`runsc`) user-space kernels with Docker network segmentation**. In this browser simulation, execution timings are framed strictly as **"Design Target: <12 ms"**, and model workers / evaluators are labeled as **`(Mock)`**.
+> This web interface is an **interactive architecture simulation and cryptographic verification environment**. The actual production isolation implementation specified in this document runs on **gVisor (`runsc`) user-space kernels with Docker container runtime boundaries**. In this browser simulation, execution timings are framed strictly as **"Design Target: <12 ms"**, and model workers / evaluators are labeled as **`(Mock)`**.
 
 ---
 
@@ -18,7 +18,7 @@ Current adversarial AI safety testing ("Red Teaming") inherently introduces cata
 2. **Benchmark Distortion & Memory Snooping:** In shared model serving instances, KV-cache residue, defensive system prompts, and evaluator rules leak across tenant boundaries, allowing adversaries to game benchmarks.
 3. **Auditability Deficits:** Safety score evaluations lack cryptographic provenance; logs can be altered retrospectively without detection.
 
-**Project Phalanx** eliminates these failure modes by enforcing **kernel-level hardware sandboxing** via gVisor (`runsc`), **blinded mediation** across segmented Docker internal subnets, **commit-reveal payload binding** with single-use cryptographic salts, and an **immutable, tamper-evident SHA-256 Merkle audit ledger**.
+**Bayora** eliminates these failure modes by enforcing **kernel-level hardware sandboxing** via gVisor (`runsc`), **blinded mediation** across segmented Docker internal subnets, **commit-reveal payload binding** with single-use cryptographic salts, and an **immutable, tamper-evident SHA-256 Merkle audit ledger**.
 
 ---
 
@@ -48,7 +48,7 @@ Current adversarial AI safety testing ("Red Teaming") inherently introduces cata
 ```
 
 ### Security Properties Enforced
-| Domain | Threat | Phalanx Mitigation Mechanism |
+| Domain | Threat | Bayora Mitigation Mechanism |
 | :--- | :--- | :--- |
 | **Syscall Isolation** | Host kernel exploits from adversarial code execution | gVisor `runsc` virtualizes all Linux syscalls in userspace via Sentry. Zero direct host syscall exposure. |
 | **Network Snooping** | Red team probing internal evaluator or LLM endpoints | 3-tier segmented Docker bridge networks. Red sandbox only has network route to `Blind Broker:8000`. |
@@ -88,7 +88,7 @@ version: '3.9'
 
 services:
   red-sandbox:
-    image: phalanx/red-runner:latest
+    image: bayora/red-runner:latest
     runtime: runsc
     networks:
       - red-broker-net
@@ -98,7 +98,7 @@ services:
       - no-new-privileges:true
 
   blind-broker:
-    image: phalanx/broker:latest
+    image: bayora/broker:latest
     runtime: runsc
     networks:
       - red-broker-net
@@ -107,7 +107,7 @@ services:
       - "127.0.0.1:8000:8000"
 
   model-worker:
-    image: phalanx/vllm-worker:latest
+    image: bayora/vllm-worker:latest
     runtime: runsc
     networks:
       - broker-internal-net
@@ -115,7 +115,7 @@ services:
       - ENFORCE_STATELESS=1
 
   blue-evaluator:
-    image: phalanx/blue-scorer:latest
+    image: bayora/blue-scorer:latest
     runtime: runsc
     networks:
       - broker-internal-net

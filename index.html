@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Project Phalanx: Hardware/kernel-isolated sandboxing and blinded mediation keeping Red team, Blue team, and Client LLMs isolated with an immutable SHA-256 Merkle audit ledger for Hack in Hills '26.">
-  <title>Project Phalanx — Hardware-Isolated Sandboxing & Zero-Trust Mediation</title>
+  <meta name="description" content="Bayora: Hardware/kernel-isolated sandboxing and blinded mediation keeping Red team, Blue team, and Client LLMs isolated with an immutable SHA-256 Merkle audit ledger.">
+  <title>Bayora — Hardware-Isolated Sandboxing &amp; Zero-Trust Mediation</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -13,7 +13,7 @@
   <aside class="disclaimer-banner" role="alert" aria-label="Simulation Notice">
     <div>
       <span class="disclaimer-tag">NOTICE</span>
-      <span>Interactive simulation. The real isolation layer is gVisor (runsc) + Docker (see <a href="#architecture" style="color:#FFF;">Architecture</a>).</span>
+      <span>Interactive architecture simulation. The production isolation layer utilizes gVisor (runsc) + Docker container runtime boundaries (see <a href="#architecture" style="color:#FFF;">Architecture section below</a>).</span>
     </div>
     <div class="target-spec">
       <span>Design Target: &lt;12 ms Overhead</span> | <span>Status: ONLINE</span>
@@ -24,15 +24,15 @@
   <header class="site-header">
     <div class="container">
       <div class="header-meta">
-        <div><span>SYSTEM: PHALANX_EVAL_CORE v1.4.0</span> | <span>GIT_COMMIT: <span class="mono" id="git-commit-tag">9440092</span></span></div>
-        <div><span>TRACK 04: BAYORA AI SAFETY</span> | <span>BUILDER: AJAY DOMA (TEAM DOOM)</span></div>
+        <div><span>SYSTEM: BAYORA_CORE v1.4.0</span> | <span>GIT_COMMIT: <span class="mono" id="git-commit-tag">721348e</span></span></div>
+        <div><span>OPEN-SOURCE SYSTEMS INFRASTRUCTURE</span> | <span>MAINTAINER: AJAY DOMA</span></div>
       </div>
 
       <div class="header-title-row">
         <div class="title-group">
-          <h1>PROJECT PHALANX</h1>
+          <h1>BAYORA</h1>
           <div class="tagline">Hardware-Isolated Sandboxing &amp; Zero-Trust Mediation for Adversarial AI Evaluation</div>
-          <div class="subtagline">Competition: Hack in Hills '26 (Track 04: Securing Adversarial AI Safety Testing Infrastructure, Bayora)</div>
+          <div class="subtagline">An open-source architecture specification, interactive simulator, and systems verification platform</div>
         </div>
         <div class="header-actions">
           <a href="#pipeline-section" class="btn btn-primary" id="btn-header-run">[RUN SIMULATION]</a>
@@ -66,7 +66,7 @@
   <main>
 
     <!-- SECTION 2: THE BOTTLENECK (PROBLEM SPECIFICATION) -->
-    <section id="bottleneck-section" class="phalanx-section" aria-labelledby="heading-bottleneck">
+    <section id="bottleneck-section" class="bayora-section" aria-labelledby="heading-bottleneck">
       <div class="container">
         <div class="section-header">
           <h2 id="heading-bottleneck" class="section-title">
@@ -97,8 +97,8 @@
           </article>
 
           <article class="col-card">
-            <h3>TRACK ALIGNMENT &amp; MANDATE</h3>
-            <p>Direct alignment with Bayora Hack in Hills '26 Track 04 mandate for bulletproof adversarial safety infrastructure:</p>
+            <h3>ARCHITECTURAL MANDATE &amp; ZERO LEAKAGE</h3>
+            <p>Design mandate for bulletproof adversarial safety testing and multi-tenant evaluation infrastructure:</p>
             <ul>
               <li>Zero-knowledge blinded mediation between red adversary and blue evaluator</li>
               <li>Enforced statelessness with atomic VRAM purging</li>
@@ -110,7 +110,7 @@
     </section>
 
     <!-- SECTION 3: LIVE PIPELINE DEMO (CENTERPIECE) -->
-    <section id="pipeline-section" class="phalanx-section" aria-labelledby="heading-pipeline">
+    <section id="pipeline-section" class="bayora-section" aria-labelledby="heading-pipeline">
       <div class="container">
         <div class="section-header">
           <h2 id="heading-pipeline" class="section-title">
@@ -248,10 +248,13 @@
         <div class="terminal-window" aria-label="Terminal Audit Console">
           <div class="terminal-header">
             <span>TERMINAL AUDIT CONSOLE // stdout (SHA-256 Web Crypto Stream)</span>
-            <span class="mono">[LOG BUFFER: ACTIVE]</span>
+            <div class="terminal-controls">
+              <button type="button" class="btn-term" id="btn-clear-term" title="Reset terminal console stdout">[CLEAR]</button>
+              <button type="button" class="btn-term" id="btn-export-log" title="Export trace logs to file">[EXPORT LOGS]</button>
+            </div>
           </div>
           <div class="terminal-body" id="terminal-log-output" role="log" aria-live="polite">
-            <div class="term-line green">[INIT] Phalanx Core Kernel Sandbox Engine initialized.</div>
+            <div class="term-line green">[INIT] Bayora Core Kernel Sandbox Engine initialized.</div>
             <div class="term-line dim">[INIT] Web Crypto API (SubtleCrypto) SHA-256 binding: ACTIVE.</div>
             <div class="term-line dim">[INIT] Single-use salt ledger pool initialized (0 consumed nonces).</div>
             <div class="term-line dim">[READY] Awaiting evaluation execution dispatch...</div>
@@ -262,7 +265,7 @@
     </section>
 
     <!-- SECTION 4: ISOLATION CHECK (COMPOSE NETWORK SPECIFICATION) -->
-    <section id="isolation-section" class="phalanx-section" aria-labelledby="heading-isolation">
+    <section id="isolation-section" class="bayora-section" aria-labelledby="heading-isolation">
       <div class="container">
         <div class="section-header">
           <h2 id="heading-isolation" class="section-title">
@@ -320,7 +323,7 @@
     </section>
 
     <!-- SECTION 5: CRYPTOGRAPHIC AUDIT LEDGER & MERKLE PROOF -->
-    <section id="ledger-section" class="phalanx-section" aria-labelledby="heading-ledger">
+    <section id="ledger-section" class="bayora-section" aria-labelledby="heading-ledger">
       <div class="container">
         <div class="section-header">
           <h2 id="heading-ledger" class="section-title">
@@ -350,7 +353,7 @@
 
         <!-- Verification Results Alerts -->
         <div id="chain-verify-alert" class="alert-banner">
-          <!-- Populated by JavaScript -->
+          <!-- Populated by JavaScript with Byte-Level Diff -->
         </div>
 
         <!-- Dense Engineering Ledger Table -->
@@ -360,7 +363,7 @@
               <tr>
                 <th scope="col">INDEX</th>
                 <th scope="col">TIMESTAMP</th>
-                <th scope="col">PAYLOAD HASH (CLICK TO EXPAND)</th>
+                <th scope="col">PAYLOAD HASH (CLICK TO COPY/EXPAND)</th>
                 <th scope="col">RESPONSE HASH</th>
                 <th scope="col">SCORE</th>
                 <th scope="col">PREVIOUS HASH (H_{n-1})</th>
@@ -375,13 +378,13 @@
         </div>
 
         <div style="font-family:var(--font-mono); font-size:11px; color:var(--text-muted);">
-          * Hash chaining rule: <span class="mono">H_n = SHA-256(H_{n-1} + Index + Timestamp + PayloadHash + ResponseHash + Score)</span>. Click any truncated hash to view full 256-bit hexadecimal digest.
+          * Hash chaining rule: <span class="mono">H_n = SHA-256(H_{n-1} + Index + Timestamp + PayloadHash + ResponseHash + Score)</span>. Click or press Enter on any hash to copy full digest to clipboard.
         </div>
       </div>
     </section>
 
     <!-- SECTION 6: HONEYPOT CANARY TRIPWIRES -->
-    <section id="canary-section" class="phalanx-section" aria-labelledby="heading-canary">
+    <section id="canary-section" class="bayora-section" aria-labelledby="heading-canary">
       <div class="container">
         <div class="section-header">
           <h2 id="heading-canary" class="section-title">
@@ -391,7 +394,7 @@
         </div>
 
         <p style="margin-bottom:14px; font-size:13px;">
-          To detect rogue red-team exploits, covert privilege escalation attempts, or unauthorized sandbox reconnaissance, Phalanx seeds decoy filesystem assets and dummy environment secrets inside untrusted runner containers. Access attempts trigger immediate containment freezes.
+          To detect rogue red-team exploits, covert privilege escalation attempts, or unauthorized sandbox reconnaissance, Bayora seeds decoy filesystem assets and dummy environment secrets inside untrusted runner containers. Access attempts trigger immediate containment freezes.
         </p>
 
         <div class="canary-grid">
@@ -406,7 +409,7 @@
               <div><strong>1. SENSITIVE WEIGHTS TRAP:</strong> <span class="mono">/etc/mock_guard_weights.bin</span></div>
               <div style="color:var(--text-dim); margin-left:14px;">Permissions: 0444 (eBPF inotify tripwire armed)</div>
 
-              <div style="margin-top:8px;"><strong>2. DUMMY DEFENSE API KEY:</strong> <span class="mono">DEFENSE_API_KEY_DUMMY=sk-phalanx-canary-7f39...</span></div>
+              <div style="margin-top:8px;"><strong>2. DUMMY DEFENSE API KEY:</strong> <span class="mono">DEFENSE_API_KEY_DUMMY=sk-bayora-canary-7f39...</span></div>
               <div style="color:var(--text-dim); margin-left:14px;">Scope: Honeytoken monitored for canary token beaconing</div>
 
               <div style="margin-top:8px;"><strong>3. SYSCALL TRAP:</strong> <span class="mono">ptrace / /proc/kallsyms</span></div>
@@ -441,7 +444,7 @@
     </section>
 
     <!-- SECTION 7: ARCHITECTURE & SPECIFICATION -->
-    <section id="architecture" class="phalanx-section" aria-labelledby="heading-arch">
+    <section id="architecture" class="bayora-section" aria-labelledby="heading-arch">
       <div class="container">
         <div class="section-header">
           <h2 id="heading-arch" class="section-title">
@@ -524,7 +527,7 @@ Response: {
     </section>
 
     <!-- SECTION 8: ROADMAP -->
-    <section id="roadmap-section" class="phalanx-section" aria-labelledby="heading-roadmap">
+    <section id="roadmap-section" class="bayora-section" aria-labelledby="heading-roadmap">
       <div class="container">
         <div class="section-header">
           <h2 id="heading-roadmap" class="section-title">
@@ -574,7 +577,7 @@ Response: {
     <div class="container">
       <div class="footer-content">
         <div>
-          <strong>PROJECT PHALANX</strong> | Hack in Hills '26 (Track 04) | Ajay Doma (Team DOOM)
+          <strong>BAYORA</strong> | Independent Open-Source Security &amp; Systems Infrastructure | Maintainer: Ajay Doma
         </div>
         <div>
           GitHub: <a href="https://github.com/AjayLucky3" target="_blank" rel="noopener noreferrer">https://github.com/AjayLucky3</a> | Email: <a href="mailto:domaajay187@gmail.com">domaajay187@gmail.com</a>
