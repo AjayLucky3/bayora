@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Project Phalanx: Hardware/kernel-isolated sandboxing and blinded mediation keeping Red team, Blue team, and Client LLMs isolated with an immutable SHA-256 Merkle audit ledger for Hack in Hills '26.">
+  <title>Project Phalanx — Hardware-Isolated Sandboxing & Zero-Trust Mediation</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Persistent Disclaimer Banner -->
+  <aside class="disclaimer-banner" role="alert" aria-label="Simulation Notice">
+    <div>
+      <span class="disclaimer-tag">NOTICE</span>
+      <span>Interactive simulation. The real isolation layer is gVisor (runsc) + Docker (see <a href="#architecture" style="color:#FFF;">Architecture</a>).</span>
+    </div>
+    <div class="target-spec">
+      <span>Design Target: &lt;12 ms Overhead</span> | <span>Status: ONLINE</span>
+    </div>
+  </aside>
+
+  <!-- Site Header & Navigation -->
+  <header class="site-header">
+    <div class="container">
+      <div class="header-meta">
+        <div><span>SYSTEM: PHALANX_EVAL_CORE v1.4.0</span> | <span>GIT_COMMIT: <span class="mono" id="git-commit-tag">2f6853a</span></span></div>
+        <div><span>TRACK 04: BAYORA AI SAFETY</span> | <span>BUILDER: AJAY DOMA (TEAM DOOM)</span></div>
+      </div>
+
+      <div class="header-title-row">
+        <div class="title-group">
+          <h1>PROJECT PHALANX</h1>
+          <div class="tagline">Hardware-Isolated Sandboxing &amp; Zero-Trust Mediation for Adversarial AI Evaluation</div>
+          <div class="subtagline">Competition: Hack in Hills '26 (Track 04: Securing Adversarial AI Safety Testing Infrastructure, Bayora)</div>
+        </div>
+        <div class="header-actions">
+          <a href="#pipeline-section" class="btn btn-primary" id="btn-header-run">[RUN SIMULATION]</a>
+          <a href="https://github.com/AjayLucky3" target="_blank" rel="noopener noreferrer" class="btn" id="btn-header-github">[VIEW GITHUB (AjayLucky3)]</a>
+        </div>
+      </div>
+
+      <div class="thesis-statement">
+        <strong>CORE THESIS:</strong> Blinded mediation across isolated gVisor runtime micro-sandboxes with stateless KV-cache zeroing and an append-only SHA-256 Merkle ledger guarantees zero benchmark distortion and tamper-evident adversarial evaluation.
+      </div>
+
+      <!-- Navigation Bar -->
+      <nav class="section-nav" aria-label="Section Navigation">
+        <a href="#bottleneck-section">[1. BOTTLENECK]</a>
+        <span class="nav-separator">|</span>
+        <a href="#pipeline-section">[2. LIVE PIPELINE]</a>
+        <span class="nav-separator">|</span>
+        <a href="#isolation-section">[3. NET ISOLATION]</a>
+        <span class="nav-separator">|</span>
+        <a href="#ledger-section">[4. MERKLE LEDGER]</a>
+        <span class="nav-separator">|</span>
+        <a href="#canary-section">[5. CANARY TRIPWIRES]</a>
+        <span class="nav-separator">|</span>
+        <a href="#architecture">[6. ARCHITECTURE]</a>
+        <span class="nav-separator">|</span>
+        <a href="#roadmap-section">[7. ROADMAP]</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- SECTION 2: THE BOTTLENECK (PROBLEM SPECIFICATION) -->
+    <section id="bottleneck-section" class="phalanx-section" aria-labelledby="heading-bottleneck">
+      <div class="container">
+        <div class="section-header">
+          <h2 id="heading-bottleneck" class="section-title">
+            <span>[01] THE BOTTLENECK</span>
+          </h2>
+          <span class="section-badge">CRITICAL THREAT LANDSCAPE</span>
+        </div>
+
+        <div class="three-col-grid">
+          <article class="col-card">
+            <h3>SHARED KERNEL VULNERABILITIES</h3>
+            <p>Standard container runtimes (runc) share the host Linux kernel. Adversarial AI evaluation suites frequently execute untrusted payload code that can exploit kernel surfaces:</p>
+            <ul>
+              <li>Host OS syscall exposure (dirty_pipe, io_uring privilege escalation)</li>
+              <li>Container breakout allowing direct node takeover</li>
+              <li>Memory bus snooping and cache-timing attacks on multi-tenant GPUs</li>
+            </ul>
+          </article>
+
+          <article class="col-card">
+            <h3>BENCHMARK DISTORTION</h3>
+            <p>Direct exposure between Red Team attackers and model workers compromises scientific validity and defensive secrets:</p>
+            <ul>
+              <li>KV-cache contamination between sequential attack turns</li>
+              <li>Defensive guardrail rule leakage to red-team adversaries</li>
+              <li>Unvetted models erroneously passing safety benchmarks due to prompt leakage</li>
+            </ul>
+          </article>
+
+          <article class="col-card">
+            <h3>TRACK ALIGNMENT &amp; MANDATE</h3>
+            <p>Direct alignment with Bayora Hack in Hills '26 Track 04 mandate for bulletproof adversarial safety infrastructure:</p>
+            <ul>
+              <li>Zero-knowledge blinded mediation between red adversary and blue evaluator</li>
+              <li>Enforced statelessness with atomic VRAM purging</li>
+              <li>Deterministic performance overhead — <strong>Design Target: &lt;12 ms</strong></li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 3: LIVE PIPELINE DEMO (CENTERPIECE) -->
+    <section id="pipeline-section" class="phalanx-section" aria-labelledby="heading-pipeline">
+      <div class="container">
+        <div class="section-header">
+          <h2 id="heading-pipeline" class="section-title">
+            <span>[02] LIVE PIPELINE &amp; COMMIT-REVEAL MEDIATION</span>
+          </h2>
+          <span class="section-badge">INTERACTIVE ENGINE</span>
+        </div>
+
+        <!-- ASCII Architecture Trace -->
+        <div class="ascii-diagram" aria-label="Pipeline Architecture Schematic" role="region">
++------------------+         +------------------+         +-----------------------+         +----------------------+         +---------------------+
+|   RED SANDBOX    | ------> |   BLIND BROKER   | ------> |  MODEL WORKER (Mock)  | ------> | BLUE EVALUATOR (Mock)| ------> |    MERKLE LEDGER    |
+| (Untrusted User) |         | (Stateless Proxy)|         | (Isolated vLLM Engine)|         | (Zero-Knowledge Rule)|         | (SHA-256 Chained)   |
++------------------+         +------------------+         +-----------------------+         +----------------------+         +---------------------+
+  Visibility:                  Visibility:                  Visibility:                       Visibility:                      Visibility:
+  [Prompt, Score]              [Payload, Hash]              [Ephemeral, VRAM Zero]            [Output Response Only]           [Tamper-Proof Proof]
+        </div>
+
+        <!-- Pipeline Controls & Stepper Layout -->
+        <div class="pipeline-layout">
+
+          <!-- Left: Input & Commit-Reveal Control -->
+          <div class="control-panel">
+            <div class="panel-header">
+              <span>ADVERSARIAL INPUT DISPATCH</span>
+              <span>TENANT: RED-SANDBOX-01</span>
+            </div>
+
+            <!-- Realistic Presets -->
+            <label class="input-label">BENCHMARK PRESETS (ADVBENCH / JAILBREAK FUZZING):</label>
+            <div class="preset-buttons">
+              <button type="button" class="btn btn-sm" id="preset-jailbreak">ADV-01: DAN Prefix Injection</button>
+              <button type="button" class="btn btn-sm" id="preset-privilege">ADV-02: Kernel Syzcaller Exploit</button>
+              <button type="button" class="btn btn-sm" id="preset-benign">BEN-01: Benign Safety Baseline</button>
+            </div>
+
+            <label for="prompt-input" class="input-label">ADVERSARIAL PAYLOAD (INPUT PROMPT):</label>
+            <textarea id="prompt-input" class="raw-textarea" spellcheck="false" placeholder="Enter untrusted test prompt or select a benchmark preset above..."></textarea>
+
+            <!-- Cryptographic Commit-Reveal State -->
+            <div class="commit-box" id="commit-reveal-box">
+              <div class="commit-row">
+                <span>COMMIT NONCE (CSPRNG SALT):</span>
+                <span class="mono hash-val" id="display-salt">0x0000000000000000</span>
+              </div>
+              <div class="commit-row">
+                <span>PRE-COMMITMENT DIGEST:</span>
+                <span class="mono hash-val" id="display-commit-hash">SHA-256(Prompt + Salt) = Computing...</span>
+              </div>
+              <div class="commit-row">
+                <span>REPLAY FILTER STATUS:</span>
+                <span class="mono" id="display-replay-status" style="color:var(--term-green);">[UNCONSUMED: READY]</span>
+              </div>
+            </div>
+
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button type="button" class="btn btn-primary" id="btn-execute-eval">[EXECUTE EVALUATION]</button>
+              <button type="button" class="btn" id="btn-regen-salt">[REGENERATE NONCE]</button>
+              <button type="button" class="btn btn-danger" id="btn-test-replay" title="Test replaying identical pre-committed salt">[TEST REPLAY ATTACK]</button>
+            </div>
+
+            <div id="replay-error-banner" class="alert-banner alert-fail" style="margin-top:10px;">
+              [REPLAY DETECTED] Salt nonce has already been consumed in ledger block. Pre-commitment invalid.
+            </div>
+          </div>
+
+          <!-- Right: Visibility Boundaries & Stepper Execution -->
+          <div class="execution-stepper">
+            <div class="panel-header">
+              <span>TENANT VISIBILITY BOUNDARIES &amp; STEPPER</span>
+              <span id="stepper-status-badge" class="mono">[STANDBY]</span>
+            </div>
+
+            <div class="stepper-nodes">
+              <!-- Step 1: Red Sandbox -->
+              <div class="step-node" id="step-node-red">
+                <div class="step-node-header">
+                  <span>1. RED SANDBOX (UNTRUSTED TENANT)</span>
+                  <span class="node-state" id="state-red">[IDLE]</span>
+                </div>
+                <div class="step-node-body" id="body-red">
+                  Red Team Boundary: Sees user prompt &amp; receives final score only. Network restricted to mediated gateway.
+                </div>
+              </div>
+
+              <!-- Step 2: Blind Broker -->
+              <div class="step-node" id="step-node-broker">
+                <div class="step-node-header">
+                  <span>2. BLIND BROKER (STATELESS PROXY)</span>
+                  <span class="node-state" id="state-broker">[IDLE]</span>
+                </div>
+                <div class="step-node-body" id="body-broker">
+                  Broker Boundary: Validates commit salt nonce, inspects payload, bridges internal subnets.
+                </div>
+              </div>
+
+              <!-- Step 3: Model Worker (Mock) -->
+              <div class="step-node" id="step-node-model">
+                <div class="step-node-header">
+                  <span>3. MODEL WORKER (Mock)</span>
+                  <span class="node-state" id="state-model">[IDLE]</span>
+                </div>
+                <div class="step-node-body" id="body-model">
+                  Worker Boundary: Ephemeral inference only. Mandatory post-turn hook: <strong>[KV-CACHE PURGED | VRAM ZEROED]</strong>.
+                </div>
+              </div>
+
+              <!-- Step 4: Blue Evaluator (Mock) -->
+              <div class="step-node" id="step-node-blue">
+                <div class="step-node-header">
+                  <span>4. BLUE EVALUATOR (Mock)</span>
+                  <span class="node-state" id="state-blue">[IDLE]</span>
+                </div>
+                <div class="step-node-body" id="body-blue">
+                  Blue Boundary: Evaluates raw model output only. Red Prompt is: <strong>[MASKED / ZERO KNOWLEDGE]</strong>.
+                </div>
+              </div>
+            </div>
+
+            <!-- Timing Normalization Indicator -->
+            <div class="timing-bar">
+              <div>
+                <span>MEASURED DURATION: </span>
+                <span class="mono" id="timing-measured">0.00 ms</span>
+              </div>
+              <div>
+                <span>TIMING NORMALIZED: </span>
+                <span class="mono" id="timing-normalized" style="color:var(--term-green); font-weight:700;">12.00 ms (Padded)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Terminal Log Window -->
+        <div class="terminal-window" aria-label="Terminal Audit Console">
+          <div class="terminal-header">
+            <span>TERMINAL AUDIT CONSOLE // stdout (SHA-256 Web Crypto Stream)</span>
+            <span class="mono">[LOG BUFFER: ACTIVE]</span>
+          </div>
+          <div class="terminal-body" id="terminal-log-output" role="log" aria-live="polite">
+            <div class="term-line green">[INIT] Phalanx Core Kernel Sandbox Engine initialized.</div>
+            <div class="term-line dim">[INIT] Web Crypto API (SubtleCrypto) SHA-256 binding: ACTIVE.</div>
+            <div class="term-line dim">[INIT] Single-use salt ledger pool initialized (0 consumed nonces).</div>
+            <div class="term-line dim">[READY] Awaiting evaluation execution dispatch...</div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- SECTION 4: ISOLATION CHECK (COMPOSE NETWORK SPECIFICATION) -->
+    <section id="isolation-section" class="phalanx-section" aria-labelledby="heading-isolation">
+      <div class="container">
+        <div class="section-header">
+          <h2 id="heading-isolation" class="section-title">
+            <span>[03] DOCKER COMPOSE NETWORK BRIDGE ISOLATION</span>
+          </h2>
+          <span class="section-badge">SUBNET TOPOLOGY &amp; IPTABLES</span>
+        </div>
+
+        <p style="margin-bottom:14px; font-size:13px;">
+          The multi-tier Docker Compose specification isolates untrusted Red runners from the protected inference engine and evaluation scorers via internal Linux network namespaces. Only the stateless Broker container joins both subnets.
+        </p>
+
+        <!-- Technical Schematic Diagram -->
+        <div class="ascii-diagram" aria-label="Docker Compose Network Bridge Architecture">
++-----------------------------------------------------------------------------------------------------------------------+
+| DOCKER BRIDGE NETWORK ISOLATION TOPOLOGY                                                                              |
+|                                                                                                                       |
+|  [SUBNET: red-broker-net (172.28.0.0/24)]                  [SUBNET: broker-internal-net (172.29.0.0/24)]               |
+|  +--------------------+                                    +--------------------+      +--------------------+         |
+|  |    RED SANDBOX     |                                    | MODEL WORKER (Mock)|      |BLUE EVALUATOR(Mock)|         |
+|  |  (172.28.0.10)     |                                    |  (172.29.0.20)     |      |  (172.29.0.30)     |         |
+|  +---------+----------+                                    +---------+----------+      +---------+----------+         |
+|            |                                                         |                           |                    |
+|            |  eth0                                              eth1 |                           | eth1               |
+|            +--------------------> [ BLIND BROKER ] <-----------------+---------------------------+                    |
+|                                   | (172.28.0.2)   |                                                                  |
+|                                   | (172.29.0.2)   |                                                                  |
+|                                   +----------------+                                                                  |
+|                                                                                                                       |
+|  * KERNEL RULE: iptables -I FORWARD -s 172.28.0.0/24 -d 172.29.0.0/24 -j DROP                                          |
+|  * Direct Red -> Model Worker packet delivery: DROPPED (EHOSTUNREACH)                                                 |
+|  * Direct Red -> Blue Evaluator packet delivery: DROPPED (ETIMEDOUT)                                                  |
++-----------------------------------------------------------------------------------------------------------------------+
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+          <button type="button" class="btn btn-primary" id="btn-test-network">[TEST DIRECT RED ACCESS]</button>
+          <span style="font-family:var(--font-mono); font-size:11px; color:var(--text-muted);">
+            Architectural illustration of Docker Compose network bridge isolation.
+          </span>
+        </div>
+
+        <!-- Interactive Probe Results -->
+        <div class="network-probe-output" id="network-probe-results" style="display:none;">
+          <div class="mono" style="font-weight:700; margin-bottom:6px;">[PROBE RUNNER] Dispatching TCP SYN packets from Red Sandbox (172.28.0.10)...</div>
+          <div class="mono" id="probe-line-1">&gt; Red -&gt; Broker (172.28.0.2:8000): ...</div>
+          <div class="mono" id="probe-line-2">&gt; Red -&gt; Model Worker (172.29.0.20:8001): ...</div>
+          <div class="mono" id="probe-line-3">&gt; Red -&gt; Blue Evaluator (172.29.0.30:8002): ...</div>
+          <div class="mono" style="margin-top:6px; color:var(--term-green); font-weight:700;" id="probe-summary">
+            [SUMMARY] Firewall rules strictly enforce mediation. Direct lateral tenant traversal is impossible.
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- SECTION 5: CRYPTOGRAPHIC AUDIT LEDGER & MERKLE PROOF -->
+    <section id="ledger-section" class="phalanx-section" aria-labelledby="heading-ledger">
+      <div class="container">
+        <div class="section-header">
+          <h2 id="heading-ledger" class="section-title">
+            <span>[04] CRYPTOGRAPHIC AUDIT LEDGER &amp; MERKLE PROOF</span>
+          </h2>
+          <span class="section-badge">IMMUTABLE PROVENANCE</span>
+        </div>
+
+        <!-- Ledger Header Bar -->
+        <div class="ledger-header-bar">
+          <div>
+            <span>CURRENT MERKLE ROOT: </span>
+            <span class="mono merkle-root-display" id="merkle-root-display">0x0000000000000000000000000000000000000000000000000000000000000000</span>
+          </div>
+          <div>
+            <span>TOTAL BLOCKS: </span>
+            <span class="mono" id="ledger-count-display">0</span>
+          </div>
+        </div>
+
+        <!-- Verification Actions -->
+        <div class="ledger-actions" style="margin-bottom:12px;">
+          <button type="button" class="btn btn-primary" id="btn-verify-chain">[VERIFY CHAIN INTEGRITY]</button>
+          <button type="button" class="btn btn-danger" id="btn-simulate-tamper">[SIMULATE TAMPERING]</button>
+          <button type="button" class="btn" id="btn-reset-ledger">[RESET CLEAN STATE]</button>
+        </div>
+
+        <!-- Verification Results Alerts -->
+        <div id="chain-verify-alert" class="alert-banner">
+          <!-- Populated by JavaScript -->
+        </div>
+
+        <!-- Dense Engineering Ledger Table -->
+        <div class="table-responsive">
+          <table class="engineer-table" id="audit-ledger-table" aria-label="Cryptographic Audit Ledger">
+            <thead>
+              <tr>
+                <th scope="col">INDEX</th>
+                <th scope="col">TIMESTAMP</th>
+                <th scope="col">PAYLOAD HASH (CLICK TO EXPAND)</th>
+                <th scope="col">RESPONSE HASH</th>
+                <th scope="col">SCORE</th>
+                <th scope="col">PREVIOUS HASH (H_{n-1})</th>
+                <th scope="col">ENTRY HASH (H_n)</th>
+                <th scope="col">ACTION</th>
+              </tr>
+            </thead>
+            <tbody id="ledger-table-body">
+              <!-- Populated by app.js -->
+            </tbody>
+          </table>
+        </div>
+
+        <div style="font-family:var(--font-mono); font-size:11px; color:var(--text-muted);">
+          * Hash chaining rule: <span class="mono">H_n = SHA-256(H_{n-1} + Index + Timestamp + PayloadHash + ResponseHash + Score)</span>. Click any truncated hash to view full 256-bit hexadecimal digest.
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 6: HONEYPOT CANARY TRIPWIRES -->
+    <section id="canary-section" class="phalanx-section" aria-labelledby="heading-canary">
+      <div class="container">
+        <div class="section-header">
+          <h2 id="heading-canary" class="section-title">
+            <span>[05] HONEYPOT CANARY TRIPWIRES</span>
+          </h2>
+          <span class="section-badge">ACTIVE DEFENSIVE CONTAINMENT</span>
+        </div>
+
+        <p style="margin-bottom:14px; font-size:13px;">
+          To detect rogue red-team exploits, covert privilege escalation attempts, or unauthorized sandbox reconnaissance, Phalanx seeds decoy filesystem assets and dummy environment secrets inside untrusted runner containers. Access attempts trigger immediate containment freezes.
+        </p>
+
+        <div class="canary-grid">
+          <!-- Canary Assets List -->
+          <div class="canary-box">
+            <div class="panel-header">
+              <span>DECOY SYSTEM ARTIFACTS</span>
+              <span class="canary-status-tag secure" id="canary-status-pill">[CANARY: UNTRIPPED]</span>
+            </div>
+
+            <div style="font-family:var(--font-mono); font-size:12px; line-height:1.7;">
+              <div><strong>1. SENSITIVE WEIGHTS TRAP:</strong> <span class="mono">/etc/mock_guard_weights.bin</span></div>
+              <div style="color:var(--text-dim); margin-left:14px;">Permissions: 0444 (eBPF inotify tripwire armed)</div>
+
+              <div style="margin-top:8px;"><strong>2. DUMMY DEFENSE API KEY:</strong> <span class="mono">DEFENSE_API_KEY_DUMMY=sk-phalanx-canary-7f39...</span></div>
+              <div style="color:var(--text-dim); margin-left:14px;">Scope: Honeytoken monitored for canary token beaconing</div>
+
+              <div style="margin-top:8px;"><strong>3. SYSCALL TRAP:</strong> <span class="mono">ptrace / /proc/kallsyms</span></div>
+              <div style="color:var(--text-dim); margin-left:14px;">Filter: Sentry seccomp-bpf denies with instant SIGKILL</div>
+            </div>
+
+            <div style="margin-top:16px; display:flex; gap:8px;">
+              <button type="button" class="btn btn-danger" id="btn-trip-canary">[ATTEMPT CANARY READ]</button>
+              <button type="button" class="btn" id="btn-reset-canary">[RESTORE / UNFREEZE]</button>
+            </div>
+          </div>
+
+          <!-- Sandbox Containment State -->
+          <div class="canary-box" id="containment-state-box">
+            <div class="panel-header">
+              <span>TENANT CONTAINMENT STATUS</span>
+              <span class="mono" id="containment-code">[STATE: NORMAL_OPERATION]</span>
+            </div>
+
+            <div id="containment-details" style="font-family:var(--font-mono); font-size:12px; line-height:1.6;">
+              <div>ACTIVE CPU SHARES: 1024 (Unthrottled)</div>
+              <div>MEMORY CGROUP: 512MB / 512MB</div>
+              <div>CONTAINER RUNTIME: gVisor (runsc) Sentry Sandbox</div>
+              <div style="margin-top:10px; color:var(--term-green); font-weight:700;" id="containment-msg">
+                [OK] Sandbox telemetry nominal. No canary tampering detected.
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- SECTION 7: ARCHITECTURE & SPECIFICATION -->
+    <section id="architecture" class="phalanx-section" aria-labelledby="heading-arch">
+      <div class="container">
+        <div class="section-header">
+          <h2 id="heading-arch" class="section-title">
+            <span>[06] ARCHITECTURE &amp; PRODUCTION SPECIFICATION</span>
+          </h2>
+          <span class="section-badge">IMPLEMENTATION PROTOCOL</span>
+        </div>
+
+        <div class="two-col-grid">
+          <!-- Left: Production Stack -->
+          <div class="control-panel">
+            <div class="panel-header">
+              <span>PRODUCTION INFRASTRUCTURE STACK</span>
+              <span>RUNSC HARDENED</span>
+            </div>
+
+            <table class="engineer-table" style="margin-top:8px;">
+              <tbody>
+                <tr>
+                  <td><strong>ISOLATION LAYER</strong></td>
+                  <td>Docker Engine + gVisor (<span class="mono">runsc</span>) User-space Sentry Kernel</td>
+                </tr>
+                <tr>
+                  <td><strong>MEDIATION BROKER</strong></td>
+                  <td>Python 3.11 / FastAPI Async Proxy (<span class="mono">uvicorn</span> worker pool)</td>
+                </tr>
+                <tr>
+                  <td><strong>MODEL WORKER</strong></td>
+                  <td>Stateless vLLM Inference Container (<span class="mono">--enforce-stateless</span>)</td>
+                </tr>
+                <tr>
+                  <td><strong>EVALUATION SCORER</strong></td>
+                  <td>Zero-Knowledge Keyword + Heuristic Blue Guardrail Container</td>
+                </tr>
+                <tr>
+                  <td><strong>AUDIT DATABASE</strong></td>
+                  <td>SQLite WAL-mode Ledger with SHA-256 Merkle Leaf Indexing</td>
+                </tr>
+                <tr>
+                  <td><strong>HARDWARE TARGET</strong></td>
+                  <td>x86_64 / ARM64 bare-metal with IOMMU GPU passthrough</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Right: API Protocol -->
+          <div class="control-panel">
+            <div class="panel-header">
+              <span>API COMMUNICATION PROTOCOL</span>
+              <span>HTTP/JSON REST</span>
+            </div>
+
+            <div class="ascii-diagram" style="margin-bottom:0; font-size:11px;">
+POST /v1/eval/commit
+Request:  { "prompt_hash": "sha256(p)", "salt": "0x7a8f..." }
+Response: { "status": "COMMITTED", "commit_id": "c-9182" }
+
+POST /v1/eval/execute
+Request:  { "prompt": "...", "salt": "0x7a8f...", "commit_id": "c-9182" }
+Response: { 
+  "score": 85, 
+  "model_response": "Refusal generated...", 
+  "ledger_index": 4, 
+  "entry_hash": "0x4b2c..." 
+}
+
+GET /v1/audit/proof?leaf_index=4
+Response: { 
+  "leaf_index": 4, 
+  "root": "0x89ab...", 
+  "sibling_hashes": ["0x12..", "0x34.."], 
+  "valid": true 
+}
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- SECTION 8: ROADMAP -->
+    <section id="roadmap-section" class="phalanx-section" aria-labelledby="heading-roadmap">
+      <div class="container">
+        <div class="section-header">
+          <h2 id="heading-roadmap" class="section-title">
+            <span>[07] ENGINEERING ROADMAP</span>
+          </h2>
+          <span class="section-badge">HORIZON 2026-2027</span>
+        </div>
+
+        <div class="three-col-grid">
+          <article class="col-card">
+            <h3>OPERATIONAL HARDENING</h3>
+            <p>Production pipeline hardening for enterprise red-teaming:</p>
+            <ul>
+              <li>CI/CD blocking gates integrated directly into GitHub Actions</li>
+              <li>Automated security auditor webhook dispatch upon canary trips</li>
+              <li>Dynamic seccomp syscall profiling per benchmark suite</li>
+            </ul>
+          </article>
+
+          <article class="col-card">
+            <h3>CONTINUOUS ADVERSARIAL PROBING</h3>
+            <p>Automated safety validation and benchmark resiliency:</p>
+            <ul>
+              <li>Autonomous red-team agents executing dynamic multi-turn fuzzing</li>
+              <li>Real-time defense adaptation without KV-cache cross-contamination</li>
+              <li>Differential fuzzing of model quantization boundaries</li>
+            </ul>
+          </article>
+
+          <article class="col-card">
+            <h3>VERIFIABLE SCALING</h3>
+            <p>Hardware-level cryptographic attestation:</p>
+            <ul>
+              <li>AMD SEV-SNP &amp; Intel SGX Confidential Computing attestation</li>
+              <li>Merkle proof state root anchoring to public decentralized ledgers</li>
+              <li>Zero-knowledge succinct proofs (zk-SNARKs) of evaluation compliance</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- SECTION 9: FOOTER -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-content">
+        <div>
+          <strong>PROJECT PHALANX</strong> | Hack in Hills '26 (Track 04) | Ajay Doma (Team DOOM)
+        </div>
+        <div>
+          GitHub: <a href="https://github.com/AjayLucky3" target="_blank" rel="noopener noreferrer">https://github.com/AjayLucky3</a> | Email: <a href="mailto:domaajay187@gmail.com">domaajay187@gmail.com</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Inclusion Proof Modal Dialog -->
+  <div class="modal-overlay" id="proof-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="proof-modal-title">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span id="proof-modal-title">MERKLE INCLUSION PROOF INSPECTION</span>
+        <button type="button" class="btn btn-sm" id="btn-close-modal">[CLOSE (ESC)]</button>
+      </div>
+
+      <div id="modal-proof-body">
+        <div><strong>TARGET LEAF INDEX:</strong> <span class="mono" id="proof-target-index">0</span></div>
+        <div><strong>LEAF ENTRY HASH:</strong> <span class="mono" id="proof-leaf-hash">0x00...</span></div>
+        <div><strong>EXPECTED MERKLE ROOT:</strong> <span class="mono" id="proof-expected-root">0x00...</span></div>
+
+        <div style="margin-top:12px;"><strong>SIBLING PATH RECONSTRUCTION:</strong></div>
+        <ul class="proof-step-list" id="proof-sibling-list">
+          <!-- Populated dynamically -->
+        </ul>
+
+        <div style="margin-top:12px; padding:8px; border:1px solid #000; background:#DCFFE4; color:#1A7F37; font-weight:700;" id="proof-status-banner">
+          [VERIFIED] Cryptographic inclusion proof matches current Merkle root.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
