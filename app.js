@@ -890,7 +890,7 @@
     // Populate commit tag dynamically if git-commit-tag exists
     const commitTagEl = document.getElementById('git-commit-tag');
     if (commitTagEl) {
-      commitTagEl.textContent = '2f6853a';
+      commitTagEl.textContent = '9440092';
     }
 
     // Set initial preset prompt
