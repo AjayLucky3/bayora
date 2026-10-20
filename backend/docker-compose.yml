@@ -1,19 +1,33 @@
 version: '3.9'
 
 # ==============================================================================
-# BAYORA PRODUCTION DOCKER COMPOSE TOPOLOGY
-# Multi-Tier Container Network Segmentation & gVisor (runsc) Sandbox Isolation
+# BAYORA PRODUCTION ORCHESTRATION TOPOLOGY (PHASE 2)
+# Multi-Tier Container Network Segmentation & Blind Mediation Architecture
+#
+# NOTE ON GVISOR (runsc) CONTAINER RUNTIME:
+# In Linux environments with gVisor installed (apt install runsc / docker runtime configure),
+# uncomment `runtime: runsc` on any service to enforce kernel-level hardware sandbox isolation.
+# In standard Docker environments, runc is used automatically.
 # ==============================================================================
 
 services:
-  # Untrusted Red Team Runner (Adversarial test executor)
-  red-sandbox:
-    image: bayora/red-runner:latest
-    container_name: bayora-red-sandbox
-    runtime: runsc
+  # ----------------------------------------------------------------------------
+  # 1. Untrusted Red Team Runner (Adversarial Client)
+  # Connects ONLY to red-broker-net. Completely air-gapped from inference & scoring.
+  # ----------------------------------------------------------------------------
+  red_team:
+    build:
+      context: ./red_team
+      dockerfile: Dockerfile
+    container_name: bayora-red-team
+    # runtime: runsc  # Uncomment for gVisor Sentry hardware-isolated kernel sandboxing
     networks:
       red-broker-net:
         ipv4_address: 172.28.0.10
+    environment:
+      - BROKER_URL=http://broker:8000
+      - MODEL_WORKER_URL=http://model_worker:8001
+      - BLUE_TEAM_URL=http://blue_team:8002
     cap_drop:
       - ALL
     security_opt:
@@ -25,14 +39,17 @@ services:
           memory: 512M
     restart: unless-stopped
 
-  # Stateless Mediation Proxy Gateway (Joins both subnets)
-  blind-broker:
+  # ----------------------------------------------------------------------------
+  # 2. Stateless Blind Mediation Broker Gateway
+  # Sole mediator bridging both networks. Validates commit-reveal proofs,
+  # normalizes side-channel latencies, and commits blocks to the Merkle ledger.
+  # ----------------------------------------------------------------------------
+  broker:
     build:
       context: ./broker
       dockerfile: Dockerfile
-    image: bayora/broker:latest
-    container_name: bayora-blind-broker
-    runtime: runsc
+    container_name: bayora-broker
+    # runtime: runsc  # Uncomment for gVisor Sentry hardware-isolated kernel sandboxing
     networks:
       red-broker-net:
         ipv4_address: 172.28.0.2
@@ -41,44 +58,58 @@ services:
     ports:
       - "127.0.0.1:8000:8000"
     environment:
-      - BIND_HOST=0.0.0.0
-      - BIND_PORT=8000
-      - MODEL_WORKER_URL=http://172.29.0.20:8001
-      - BLUE_EVAL_URL=http://172.29.0.30:8002
+      - MODEL_WORKER_URL=http://model_worker:8001
+      - BLUE_TEAM_URL=http://blue_team:8002
       - LEDGER_DB_PATH=/var/lib/bayora/ledger.db
+      - TARGET_LATENCY_MS=25.0
     volumes:
       - ledger-data:/var/lib/bayora
     restart: unless-stopped
+    depends_on:
+      - model_worker
+      - blue_team
 
-  # Protected Core: Stateless vLLM Model Worker (Air-gapped from Red)
-  model-worker:
-    image: bayora/vllm-worker:latest
+  # ----------------------------------------------------------------------------
+  # 3. Protected Core: Stateless Model Worker (Mock LLM Inference)
+  # Connects ONLY to broker-internal-net. Enforces explicit KV-cache and memory purges.
+  # ----------------------------------------------------------------------------
+  model_worker:
+    build:
+      context: ./model_worker
+      dockerfile: Dockerfile
     container_name: bayora-model-worker
-    runtime: runsc
+    # runtime: runsc  # Uncomment for gVisor Sentry hardware-isolated kernel sandboxing
     networks:
       broker-internal-net:
         ipv4_address: 172.29.0.20
     environment:
       - ENFORCE_STATELESS=1
-      - ZERO_CACHE_AFTER_TURN=1
     deploy:
       resources:
         limits:
-          memory: 8G
+          memory: 2G
     restart: unless-stopped
 
-  # Protected Core: Zero-Knowledge Blue Evaluator (Air-gapped from Red)
-  blue-evaluator:
-    image: bayora/blue-scorer:latest
-    container_name: bayora-blue-evaluator
-    runtime: runsc
+  # ----------------------------------------------------------------------------
+  # 4. Protected Core: Blue Team Zero-Knowledge Evaluator
+  # Connects ONLY to broker-internal-net. Receives response tokens ONLY; prompt is masked.
+  # ----------------------------------------------------------------------------
+  blue_team:
+    build:
+      context: ./blue_team
+      dockerfile: Dockerfile
+    container_name: bayora-blue-team
+    # runtime: runsc  # Uncomment for gVisor Sentry hardware-isolated kernel sandboxing
     networks:
       broker-internal-net:
         ipv4_address: 172.29.0.30
     restart: unless-stopped
 
+# ==============================================================================
+# NETWORK DEFINITIONS (STRICT MICRO-SEGMENTATION)
+# ==============================================================================
 networks:
-  # Subnet 1: Untrusted access to Broker only (internal: no default gateway / no egress)
+  # Untrusted ingress plane: Red Team can only speak to Broker (172.28.0.2)
   red-broker-net:
     driver: bridge
     internal: true
@@ -88,7 +119,7 @@ networks:
         - subnet: 172.28.0.0/24
           gateway: 172.28.0.1
 
-  # Subnet 2: Protected inference & scoring plane (internal: completely air-gapped from Red)
+  # Protected plane: Air-gapped from Red Team. Only Broker can reach Model Worker & Blue Team
   broker-internal-net:
     driver: bridge
     internal: true
