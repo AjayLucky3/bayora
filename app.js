@@ -964,9 +964,15 @@
     // Check 1: Zero External Dependencies
     try {
       const remoteScripts = Array.from(document.querySelectorAll('script[src]'))
-        .filter(s => s.src.startsWith('http:') || s.src.startsWith('https:') || s.src.startsWith('//'));
+        .filter(s => {
+          const raw = s.getAttribute('src') || '';
+          return raw.startsWith('http://') || raw.startsWith('https://') || raw.startsWith('//');
+        });
       const remoteLinks = Array.from(document.querySelectorAll('link[rel="stylesheet"]'))
-        .filter(l => l.href.startsWith('http:') || l.href.startsWith('https:') || l.href.startsWith('//'));
+        .filter(l => {
+          const raw = l.getAttribute('href') || '';
+          return raw.startsWith('http://') || raw.startsWith('https://') || raw.startsWith('//');
+        });
       const hasRemote = remoteScripts.length > 0 || remoteLinks.length > 0;
       
       const passed = !hasRemote;
@@ -975,7 +981,7 @@
         name: 'Zero External Dependencies',
         passed,
         details: passed 
-          ? `0 remote scripts, 0 remote stylesheets. 100% offline static assets.`
+          ? `0 remote scripts, 0 remote stylesheets. 100% offline static architecture.`
           : `Found remote resources: scripts=${remoteScripts.length}, links=${remoteLinks.length}`
       });
       logTerminal(`[${passed ? '✓' : '✗'}] 1. Zero External Dependencies: ${results[0].details}`, passed ? 'green' : 'red');
@@ -1187,12 +1193,28 @@
       const pageText = document.body.innerText || document.body.textContent;
       const hasMockTags = pageText.includes('Model Worker (Mock)') && pageText.includes('Blue Evaluator (Mock)');
 
-      const allElements = Array.from(document.querySelectorAll('*'));
+      // Verify no unauthorized gradient or pastel style rules in author stylesheets
       let hasUnauthorizedStyles = false;
-      for (const el of allElements) {
-        const bg = window.getComputedStyle(el).backgroundImage;
-        if (bg && (bg.includes('gradient') || bg.includes('linear-gradient'))) {
+      let unauthorizedDetail = '';
+      for (const sheet of Array.from(document.styleSheets)) {
+        try {
+          for (const rule of Array.from(sheet.cssRules || [])) {
+            const cssText = rule.cssText.toLowerCase();
+            if (cssText.includes('linear-gradient') || cssText.includes('radial-gradient') || cssText.includes('backdrop-filter: blur')) {
+              hasUnauthorizedStyles = true;
+              unauthorizedDetail = rule.selectorText || 'cssRule';
+              break;
+            }
+          }
+        } catch (_) {}
+      }
+
+      // Also verify inline styles
+      for (const el of Array.from(document.querySelectorAll('*[style]'))) {
+        const inline = (el.getAttribute('style') || '').toLowerCase();
+        if (inline.includes('gradient') || inline.includes('blur')) {
           hasUnauthorizedStyles = true;
+          unauthorizedDetail = el.tagName;
           break;
         }
       }
@@ -1204,7 +1226,7 @@
         passed,
         details: passed
           ? `Disclaimer banner verified, (Mock) worker tags verified, 0 forbidden gradients or AI clichés.`
-          : `Missing disclaimers or forbidden style detected.`
+          : `Missing disclaimers or forbidden style detected (${unauthorizedDetail || 'banner/tags'}).`
       });
       logTerminal(`[${passed ? '✓' : '✗'}] 8. Brutalist Styling & Disclaimers: ${results[7].details}`, passed ? 'green' : 'red');
     } catch (e) {
