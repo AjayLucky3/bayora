@@ -1245,7 +1245,7 @@
     // Populate commit tag dynamically if git-commit-tag exists
     const commitTagEl = document.getElementById('git-commit-tag');
     if (commitTagEl) {
-      commitTagEl.textContent = '5cb816f';
+      commitTagEl.textContent = '1413f60';
     }
 
     // Wire up header diagnostics button
