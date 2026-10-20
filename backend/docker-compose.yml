@@ -1,0 +1,103 @@
+version: '3.9'
+
+# ==============================================================================
+# BAYORA PRODUCTION DOCKER COMPOSE TOPOLOGY
+# Multi-Tier Container Network Segmentation & gVisor (runsc) Sandbox Isolation
+# ==============================================================================
+
+services:
+  # Untrusted Red Team Runner (Adversarial test executor)
+  red-sandbox:
+    image: bayora/red-runner:latest
+    container_name: bayora-red-sandbox
+    runtime: runsc
+    networks:
+      red-broker-net:
+        ipv4_address: 172.28.0.10
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+    restart: unless-stopped
+
+  # Stateless Mediation Proxy Gateway (Joins both subnets)
+  blind-broker:
+    build:
+      context: ./broker
+      dockerfile: Dockerfile
+    image: bayora/broker:latest
+    container_name: bayora-blind-broker
+    runtime: runsc
+    networks:
+      red-broker-net:
+        ipv4_address: 172.28.0.2
+      broker-internal-net:
+        ipv4_address: 172.29.0.2
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      - BIND_HOST=0.0.0.0
+      - BIND_PORT=8000
+      - MODEL_WORKER_URL=http://172.29.0.20:8001
+      - BLUE_EVAL_URL=http://172.29.0.30:8002
+      - LEDGER_DB_PATH=/var/lib/bayora/ledger.db
+    volumes:
+      - ledger-data:/var/lib/bayora
+    restart: unless-stopped
+
+  # Protected Core: Stateless vLLM Model Worker (Air-gapped from Red)
+  model-worker:
+    image: bayora/vllm-worker:latest
+    container_name: bayora-model-worker
+    runtime: runsc
+    networks:
+      broker-internal-net:
+        ipv4_address: 172.29.0.20
+    environment:
+      - ENFORCE_STATELESS=1
+      - ZERO_CACHE_AFTER_TURN=1
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+    restart: unless-stopped
+
+  # Protected Core: Zero-Knowledge Blue Evaluator (Air-gapped from Red)
+  blue-evaluator:
+    image: bayora/blue-scorer:latest
+    container_name: bayora-blue-evaluator
+    runtime: runsc
+    networks:
+      broker-internal-net:
+        ipv4_address: 172.29.0.30
+    restart: unless-stopped
+
+networks:
+  # Subnet 1: Untrusted access to Broker only (internal: no default gateway / no egress)
+  red-broker-net:
+    driver: bridge
+    internal: true
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.28.0.0/24
+          gateway: 172.28.0.1
+
+  # Subnet 2: Protected inference & scoring plane (internal: completely air-gapped from Red)
+  broker-internal-net:
+    driver: bridge
+    internal: true
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.29.0.0/24
+          gateway: 172.29.0.1
+
+volumes:
+  ledger-data:
+    driver: local
